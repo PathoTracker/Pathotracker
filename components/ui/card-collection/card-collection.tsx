@@ -78,10 +78,24 @@ export const CardCollection = ({
             }) => React.ReactNode;
           } = {
             [CardStyle.CARD]: ({ props, children }) => (
-              <Card {...props}> {children} </Card>
+              <Card
+                key={props.key}
+                className={props.className}
+                style={props.style}
+                hidden={props.hidden}
+              >
+                {children}
+              </Card>
             ),
             [CardStyle.DIV]: ({ props, children }) => (
-              <div {...props}> {children} </div>
+              <div 
+                key={props.key}
+                className={props.className}
+                style={props.style}
+                hidden={props.hidden}
+              >
+                {children}
+              </div>
             ),
           };
 

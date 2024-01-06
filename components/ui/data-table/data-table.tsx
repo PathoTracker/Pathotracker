@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ColumnDef,
   SortingState,
   getSortedRowModel,
   getCoreRowModel,
@@ -10,7 +9,7 @@ import {
   VisibilityState,
   getFilteredRowModel,
 } from "@tanstack/table-core";
-import { flexRender, useReactTable } from "@tanstack/react-table";
+import { ColumnDef, flexRender, useReactTable } from "@tanstack/react-table";
 import {
   Table,
   TableBody,
@@ -21,35 +20,41 @@ import {
 } from "@/components/ui/table";
 import React from "react";
 import { Button } from "@/components/ui/button";
-
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
-  data: TData[];
-  expandFilters: () => void;
-  minimizeFilters: () => void;
-  areFiltersExpanded: boolean;
-}
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import { mkConfig, generateCsv, download } from "export-to-csv";
+import { useDataTableStyles } from "./use-data-table-styles";
+
+export type DataTableColumnDef<TData, TValue> = ColumnDef<TData, TValue> & {
+  fixed?: boolean,
+  accessorKey: string,
+};
+
+interface DataTableProps<TData, TValue> {
+  columns: DataTableColumnDef<TData, TValue>[];
+  data: TData[];
+  expandFilters: () => void;
+  minimizeFilters: () => void;
+  areFiltersExpanded: boolean;
+}
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   expandFilters,
   minimizeFilters,
-  areFiltersExpanded
+  areFiltersExpanded,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({})
+    React.useState<VisibilityState>({});
 
   const table = useReactTable({
     data,
@@ -68,29 +73,40 @@ export function DataTable<TData, TValue>({
     },
   });
 
+  const { generateClassnameForCell, generateClassnameForHeader } =
+    useDataTableStyles<TData, TValue>({ columns });
+
   const getAllVisibleData = () => {
     // Get the columns we want in the csv
-    let visibleColumns = table.getAllColumns().filter(column => column.getIsVisible())
-    let column_keys: string[] = visibleColumns.map(column => {return column.id})
-    const newArrayWithSubsetAttributes: Record<string, any>[] = table.getFilteredRowModel().rows.map((originalObject: any) => {
-      const newObj: Record<string, any> = {};
-      column_keys.forEach((attribute) => {
-        let temp_data = originalObject["original"][attribute];
-        if (Array.isArray(temp_data)) {
-          temp_data = temp_data.join(";")
-        }
-        newObj[attribute] = temp_data
-      });
-      return newObj;
+    let visibleColumns = table
+      .getAllColumns()
+      .filter((column) => column.getIsVisible());
+    let column_keys: string[] = visibleColumns.map((column) => {
+      return column.id;
     });
-    // TODO: FIX THIS FILENAME 
-    const csvConfig = mkConfig({ useKeysAsHeaders: true, filename: "arbotracker_dataset" });
-    let csv = generateCsv(csvConfig)(newArrayWithSubsetAttributes)
-    download(csvConfig)(csv)
-  }
+    const newArrayWithSubsetAttributes: Record<string, any>[] = table
+      .getFilteredRowModel()
+      .rows.map((originalObject: any) => {
+        const newObj: Record<string, any> = {};
+        column_keys.forEach((attribute) => {
+          let temp_data = originalObject["original"][attribute];
+          if (Array.isArray(temp_data)) {
+            temp_data = temp_data.join(";");
+          }
+          newObj[attribute] = temp_data;
+        });
+        return newObj;
+      });
+    // TODO: FIX THIS FILENAME
+    const csvConfig = mkConfig({
+      useKeysAsHeaders: true,
+      filename: "arbotracker_dataset",
+    });
+    let csv = generateCsv(csvConfig)(newArrayWithSubsetAttributes);
+    download(csvConfig)(csv);
+  };
 
   const setAllColumnVisibility = (visibility: boolean) => {
-
     // Iterate through all columns and toggle visibility based on selectAll state
     table.getAllColumns().forEach((column) => {
       if (column.getCanHide()) {
@@ -99,18 +115,34 @@ export function DataTable<TData, TValue>({
     });
   };
 
-  const handleSelectAll = () => {setAllColumnVisibility(true)}
-  const handleClearAll = () => {setAllColumnVisibility(false)}
+  const handleSelectAll = () => {
+    setAllColumnVisibility(true);
+  };
+  const handleClearAll = () => {
+    setAllColumnVisibility(false);
+  };
 
   return (
     <div>
       <div className="flex items-center justify-between py-4">
-        <h2><b>Explore arbovirus seroprevalence estimates in our database</b></h2>
+        <h2>
+          <b>Explore arbovirus seroprevalence estimates in our database</b>
+        </h2>
         <div className="flex">
-          <Button variant="outline" className="bg-foreground mx-2 whitespace-nowrap" onClick={() => areFiltersExpanded ? minimizeFilters() : expandFilters()}>
-            { areFiltersExpanded ? "Hide Filters" : "See Filters" }
+          <Button
+            variant="outline"
+            className="bg-foreground mx-2 whitespace-nowrap"
+            onClick={() =>
+              areFiltersExpanded ? minimizeFilters() : expandFilters()
+            }
+          >
+            {areFiltersExpanded ? "Hide Filters" : "See Filters"}
           </Button>
-          <Button variant="outline" className="bg-foreground mx-2 whitespace-nowrap" onClick={getAllVisibleData}>
+          <Button
+            variant="outline"
+            className="bg-foreground mx-2 whitespace-nowrap"
+            onClick={getAllVisibleData}
+          >
             Download CSV
           </Button>
           <DropdownMenu>
@@ -120,17 +152,23 @@ export function DataTable<TData, TValue>({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-foreground">
-              <Button variant="outline" className="ml-auto bg-white" onClick={handleSelectAll}>
-                  Select All
+              <Button
+                variant="outline"
+                className="ml-auto bg-white"
+                onClick={handleSelectAll}
+              >
+                Select All
               </Button>
-              <Button variant="outline" className="ml-auto bg-white" onClick={handleClearAll}>
-                  Clear All
+              <Button
+                variant="outline"
+                className="ml-auto bg-white"
+                onClick={handleClearAll}
+              >
+                Clear All
               </Button>
               {table
                 .getAllColumns()
-                .filter(
-                  (column) => column.getCanHide()
-                )
+                .filter((column) => column.getCanHide())
                 .map((column) => {
                   return (
                     <DropdownMenuCheckboxItem
@@ -138,26 +176,28 @@ export function DataTable<TData, TValue>({
                       className="capitalize cursor-pointer"
                       checked={column.getIsVisible()}
                       onClick={(e) => {
-                        column.toggleVisibility()
-                        e.preventDefault()
+                        column.toggleVisibility();
+                        e.preventDefault();
                       }}
                     >
                       {column.id}
                     </DropdownMenuCheckboxItem>
-                  )
+                  );
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
       <div className="rounded-md border">
-        <Table>
+        <Table className="border-separate border-spacing-0">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
+                  const className = generateClassnameForHeader({ columnId: header.column.id });
+
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead key={header.id} className={className}>
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -178,7 +218,7 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className={generateClassnameForCell({ columnId: cell.column.id })}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()

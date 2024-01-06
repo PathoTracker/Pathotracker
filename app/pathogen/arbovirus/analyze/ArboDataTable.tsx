@@ -1,7 +1,7 @@
 "use client";
 
 import { columns } from "@/app/pathogen/arbovirus/analyze/columns";
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable } from "@/components/ui/data-table/data-table";
 import React, { useContext } from "react";
 import { ArboContext } from "@/contexts/arbo-context";
 

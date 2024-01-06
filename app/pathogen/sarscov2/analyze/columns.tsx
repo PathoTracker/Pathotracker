@@ -4,6 +4,7 @@ import { ColumnDef } from "@tanstack/table-core";
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";
+import { DataTableColumnDef } from "@/components/ui/data-table/data-table";
 
 export type Estimate = {
   age_group: string;
@@ -35,7 +36,7 @@ export type Estimate = {
   url: string;
 };
 
-export const columns: ColumnDef<Estimate>[] = [
+export const columns: DataTableColumnDef<Estimate, unknown>[] = [
   {
     accessorKey: "pathogen",
     header: ({ column }) => {
